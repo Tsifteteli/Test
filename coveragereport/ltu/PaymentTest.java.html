@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentTest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">.</a> &gt; <a href="index.source.html" class="el_package">ltu</a> &gt; <span class="el_source">PaymentTest.java</span></div><h1>PaymentTest.java</h1><pre class="source lang-java linenums">package ltu;
+
+import static org.junit.Assert.*;
+import java.io.IOException;
+
+import org.junit.Test;
+import org.junit.Before;
+
+<span class="fc" id="L9">public class PaymentTest {</span>
+   
+<span class="fc" id="L11">   private PaymentImpl test = null;</span>
+<span class="fc" id="L12">   private ICalendar cal = null;</span>
+   
+   private static final String DEFAULT_RULES = &quot;student100loan=7088\nstudent100subsidy=2816\nstudent50loan=3564\nstudent50subsidy=1396\nstudent0loan=0\nstudent0subsidy=0\nfulltimeIncome=85813\nparttimeIncome=128722\n&quot;;
+<span class="fc" id="L15">   private final int FULL_LOAN = 7088;</span>
+<span class="fc" id="L16">   private final int HALF_LOAN = 3564;</span>
+<span class="fc" id="L17">   private final int FULL_SUBSIDY = 2816;</span>
+<span class="fc" id="L18">   private final int HALF_SUBSIDY = 1396;</span>
+<span class="fc" id="L19">   private final String personId30year2016 = &quot;19860101-5622&quot;; //Generiskt personId för användning i alla tester som inte har med ålder att göra</span>
+
+   
+   @Before
+   public void init() {
+<span class="fc" id="L24">      cal = new Calendar2016jan();</span>
+      
+      try {
+<span class="fc" id="L27">         test = new PaymentImpl(cal);</span>
+<span class="nc" id="L28">      } catch (IOException e) {</span>
+<span class="nc" id="L29">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L30">      }</span>
+<span class="fc" id="L31">   }</span>
+   /*Age &amp; amount tests
+   [ID: 101] The student must be at least 20 years old to receive subsidiary and student loans.
+   [ID: 102] The student may receive subsidiary until the year they turn 56.
+   [ID: 103] The student may not receive any student loans from the year they turn 47.
+   [ID: 501] Full time students are entitled to loan: 7088 SEK / month
+   [ID: 502] Full time students are entitled to subsidiary: 2816 SEK / month
+   [ID: 505] A person who is entitled to receive a student loan will always receive the full amount.
+
+   personId för följande åldrar, år 2016...
+   19 år:   19970101-5622
+   20 år:   19960101-5622
+   21 år:   19950101-5622
+   46 år:   19700101-5622
+   47 år:   19690101-5622
+   48 år:   19680101-5622
+   56 år:   19600101-5622
+   57 år:   19590101-5622
+   58 år:   19580101-5622*/
+   //getMonthlyAmount(String personId, int income, int studyRate, int completionRatio)
+   
+   @Test
+   public void testAge19() {
+<span class="fc" id="L54">      assertEquals(&quot;[ID:101] 19 year old student does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(&quot;19970101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L55">   }</span>
+   
+   @Test
+   public void testAge20() {
+<span class="fc" id="L59">		assertEquals(&quot;[ID:101] [ID: 501] [ID: 502] [ID: 505] 20 year old, fulltime and full completion ratio student does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(&quot;19960101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L60">   }</span>
+   
+   @Test
+   public void testAge21() {
+<span class="fc" id="L64">		assertEquals(&quot;[ID:101] [ID: 501] [ID: 502] [ID: 505] 21 year old, fulltime and full completion ratio student does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(&quot;19950101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L65">   }</span>
+      
+   @Test
+   public void testAge30() {
+<span class="fc" id="L69">		assertEquals(&quot;[ID: 501] [ID: 502] [ID: 505] 30 year old, fulltime and full completion ratio student does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 100, 100)); //Egen kontroll av 30 år, 2016</span>
+<span class="fc" id="L70">   }</span>
+   @Test
+   public void testAge56() {
+<span class="fc" id="L73">		assertEquals(&quot;[ID:102] [ID: 502] 56 year old, fulltime and full completion ratio student does not get FULL_SUBSIDY&quot;, FULL_SUBSIDY, test.getMonthlyAmount(&quot;19600101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L74">   }</span>
+   
+   @Test
+   public void testAge57() {
+<span class="fc" id="L78">		assertEquals(&quot;[ID:102] 57 year old student does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(&quot;19590101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L79">   }</span>
+   
+   @Test
+   public void testAge58() {
+<span class="fc" id="L83">		assertEquals(&quot;[ID:102] 58 year old student does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(&quot;19580101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L84">   }</span>
+   
+   @Test
+   public void testAge46() {
+<span class="fc" id="L88">		assertEquals(&quot;[ID:103] [ID: 501] [ID: 502] [ID: 505] 46 year old, fulltime and full completion ratio student does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(&quot;19700101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L89">   }</span>
+   
+   @Test
+   public void testAge47() {
+<span class="fc" id="L93">		assertEquals(&quot;[ID:103] [ID: 502] 47 year old, fulltime and full completion ratio student does not get FULL_SUBSIDY and 0 loan&quot;, FULL_SUBSIDY, test.getMonthlyAmount(&quot;19690101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L94">   }</span>
+   
+   @Test
+   public void testAge48() {
+<span class="fc" id="L98">		assertEquals(&quot;[ID:103] [ID: 502] 48 year old, fulltime and full completion ratio student does not get FULL_SUBSIDY and 0 loan&quot;, FULL_SUBSIDY, test.getMonthlyAmount(&quot;19680101-5622&quot;, 0, 100, 100));</span>
+<span class="fc" id="L99">   }</span>
+
+   
+   /*Study rate &amp; amount tests
+   [ID: 201] The student must be studying at least half time to receive any subsidiary.
+   [ID: 202] A student studying less than full time is entitled to 50% subsidiary.
+   [ID: 203] A student studying full time is entitled to 100% subsidiary.
+   [ID: 501] Full time students are entitled to loan: 7088 SEK / month
+   [ID: 502] Full time students are entitled to subsidiary: 2816 SEK / month
+   [ID: 503] Less than full time students are entitled to loan: 3564 SEK / month
+   [ID: 504] Less than full time students are entitled to subsidiary: 1396 SEK / month
+   [ID: 505] A person who is entitled to receive a student loan will always receive the full amount.*/ 
+   //getMonthlyAmount(String personId, int income, int studyRate, int completionRatio)
+   
+   @Test
+   public void testStudyRate10() {
+<span class="fc" id="L115">      assertEquals(&quot;[ID: 201] Student with study rate 10% and full completion ratio does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 0, 10, 100));</span>
+<span class="fc" id="L116">   }</span>
+   
+   @Test
+   public void testStudyRate49() {
+<span class="fc" id="L120">		assertEquals(&quot;[ID: 201] Student with study rate 49% and full completion ratio does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 0, 49, 100));</span>
+<span class="fc" id="L121">   }</span>
+   
+   @Test
+   public void testStudyRate50() {
+<span class="fc" id="L125">      assertEquals(&quot;[ID: 202] [ID: 503] [ID: 504] [ID: 505] Student with study rate 50% and full completion ratio does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 50, 100));</span>
+<span class="fc" id="L126">   }</span>
+   
+   @Test
+   public void testStudyRate51() {
+<span class="fc" id="L130">      assertEquals(&quot;[ID: 202] [ID: 503] [ID: 504] [ID: 505] Student with study rate 51% and full completion ratio does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 51, 100));</span>
+<span class="fc" id="L131">   }</span>
+   
+   @Test
+   public void testStudyRate99() {
+<span class="fc" id="L135">      assertEquals(&quot;[ID: 202] [ID: 503] [ID: 504] [ID: 505] Student with study rate 99% and full completion ratio does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 99, 100));</span>
+<span class="fc" id="L136">   }</span>
+   
+   @Test
+   public void testStudyRate100() {
+<span class="fc" id="L140">      assertEquals(&quot;[ID: 203] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and full completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 100, 100));</span>
+<span class="fc" id="L141">   }</span>
+   
+   @Test
+   public void testStudyRate101() {
+<span class="fc" id="L145">      assertEquals(&quot;[ID: 203] [ID: 501] [ID: 502] [ID: 505] Student with study rate 101% and full completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 101, 100));</span>
+<span class="fc" id="L146">   }</span>
+   
+   @Test
+   public void testStudyRate200() {
+<span class="fc" id="L150">      assertEquals(&quot;[ID: 203] [ID: 501] [ID: 502] [ID: 505] Student with study rate 200% and full completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 200, 100));</span>
+<span class="fc" id="L151">   }</span>
+   
+   /*Income and amount tests
+   [ID: 301] A student who is studying full time or more is permitted to earn a maximum of 85 813SEK per year in order to receive any subsidiary or student loans.
+   [ID: 302] A student who is studying less than full time is allowed to earn a maximum of 128 722SEK per year in order to receive any subsidiary or student loans.
+   [ID: 501] Full time students are entitled to loan: 7088 SEK / month
+   [ID: 502] Full time students are entitled to subsidiary: 2816 SEK / month
+   [ID: 503] Less than full time students are entitled to loan: 3564 SEK / month
+   [ID: 504] Less than full time students are entitled to subsidiary: 1396 SEK / month
+   [ID: 505] A person who is entitled to receive a student loan will always receive the full amount.*/
+   //getMonthlyAmount(String personId, int income, int studyRate, int completionRatio)
+   
+   @Test
+   public void testIncome85812Fulltime() {
+<span class="fc" id="L165">      assertEquals(&quot;[ID: 301] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and income 85 812 sek/y does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85812, 100, 100));</span>
+<span class="fc" id="L166">   }</span>
+   
+   @Test
+   public void testIncome85813Fulltime() {
+<span class="fc" id="L170">		assertEquals(&quot;[ID: 301] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and income 85 813 sek/y does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85813, 100, 100));</span>
+<span class="fc" id="L171">   }</span>
+   
+   @Test
+   public void testIncome85814Fulltime() {
+<span class="fc" id="L175">      assertEquals(&quot;[ID: 301] Student with study rate 100% and income 85 814 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 85814, 100, 100));</span>
+<span class="fc" id="L176">   }</span>
+   
+   @Test
+   public void testIncome128722Fulltime() {
+<span class="fc" id="L180">      assertEquals(&quot;[ID: 301] Student with study rate 100% and income 128 722 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 128722, 100, 100));</span>
+<span class="fc" id="L181">   }</span>
+   
+   @Test
+   public void testIncome128723Fulltime() {
+<span class="fc" id="L185">      assertEquals(&quot;[ID: 301] Student with study rate 100% and income 128 723 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 128723, 100, 100));</span>
+<span class="fc" id="L186">   }</span>
+   
+   @Test
+   public void testIncome85812AboveFulltime() {
+<span class="fc" id="L190">      assertEquals(&quot;[ID: 301] [ID: 501] [ID: 502] [ID: 505] Student with study rate 101% and income 85 812 sek/y does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85812, 101, 100));</span>
+<span class="fc" id="L191">   }</span>
+   
+   @Test
+   public void testIncome85813AboveFulltime() {
+<span class="fc" id="L195">		assertEquals(&quot;[ID: 301] [ID: 501] [ID: 502] [ID: 505] Student with study rate 101% and income 85 813 sek/y does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85813, 101, 100));</span>
+<span class="fc" id="L196">   }</span>
+   
+   @Test
+   public void testIncome85814AboveFulltime() {
+<span class="fc" id="L200">      assertEquals(&quot;[ID: 301] Student with study rate 101% and income 85 814 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 85814, 101, 100));</span>
+<span class="fc" id="L201">   }</span>
+   
+   @Test
+   public void testIncome128721studyRate99() {
+<span class="fc" id="L205">      assertEquals(&quot;[ID: 302] [ID: 503] [ID: 504] [ID: 505] Student with study rate 99% and income 128 721 sek/y does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85814, 99, 100));</span>
+<span class="fc" id="L206">   }</span>
+   
+   @Test
+   public void testIncome128722studyRate99() {
+<span class="fc" id="L210">      assertEquals(&quot;[ID: 302] [ID: 503] [ID: 504] [ID: 505] Student with study rate 99% and income 128 722 sek/y does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 128722, 99, 100));</span>
+<span class="fc" id="L211">   }</span>
+   
+   @Test
+   public void testIncome128723studyRate99() {
+<span class="fc" id="L215">      assertEquals(&quot;[ID: 302] Student with study rate 99% and income 128 723 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 128723, 99, 100));</span>
+<span class="fc" id="L216">   }</span>
+   
+   @Test
+   public void testIncome128721studyRate50() {
+<span class="fc" id="L220">      assertEquals(&quot;[ID: 302] [ID: 503] [ID: 504] [ID: 505] Student with study rate 50% and income 128 721 sek/y does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 85814, 50, 100));</span>
+<span class="fc" id="L221">   }</span>
+   
+   @Test
+   public void testIncome128722studyRate50() {
+<span class="fc" id="L225">      assertEquals(&quot;[ID: 302] [ID: 503] [ID: 504] [ID: 505] Student with study rate 50% and income 128 722 sek/y does not get HALF_LOAN+HALF_SUBSIDY&quot;, HALF_LOAN+HALF_SUBSIDY, test.getMonthlyAmount(personId30year2016, 128722, 50, 100));</span>
+<span class="fc" id="L226">   }</span>
+   
+   @Test
+   public void testIncome128723studyRate50() {
+<span class="fc" id="L230">      assertEquals(&quot;[ID: 302] Student with study rate 50% and income 128 723 sek/y does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 128723, 50, 100));</span>
+<span class="fc" id="L231">   }</span>
+   
+   /*Completion ratio &amp; amount tests
+   [ID: 401] A student must have completed at least 50% of previous studies in order to receive any subsidiary or student loans.
+   [ID: 501] Full time students are entitled to loan: 7088 SEK / month
+   [ID: 502] Full time students are entitled to subsidiary: 2816 SEK / month
+   [ID: 505] A person who is entitled to receive a student loan will always receive the full amount.*/
+   //getMonthlyAmount(String personId, int income, int studyRate, int completionRatio)
+   
+   @Test
+   public void testCompletionRatio49() {
+<span class="fc" id="L242">      assertEquals(&quot;[ID: 401] Student with study rate 100% and 49% completion ratio does not get 0 in subsidiary and student loans&quot;, 0, test.getMonthlyAmount(personId30year2016, 0, 100, 49));</span>
+<span class="fc" id="L243">   }</span>
+   
+   @Test
+   public void testCompletionRatio50() {
+<span class="fc" id="L247">      assertEquals(&quot;[ID: 401] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and 50% completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 100, 50));      assertEquals(&quot;[ID: 401] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and 51% completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 100, 51));</span>
+<span class="fc" id="L248">   }</span>
+   
+   @Test
+   public void testCompletionRatio51() {
+<span class="fc" id="L252">      assertEquals(&quot;[ID: 401] [ID: 501] [ID: 502] [ID: 505] Student with study rate 100% and 51% completion ratio does not get FULL_LOAN+FULL_SUBSIDY&quot;, FULL_LOAN+FULL_SUBSIDY, test.getMonthlyAmount(personId30year2016, 0, 100, 51));</span>
+<span class="fc" id="L253">   }</span>
+
+   //Exceptions tests   
+   //getMonthlyAmount(String personId, int income, int studyRate, int completionRatio)  
+   
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidPersonIdValue() {
+<span class="nc" id="L260">      test.getMonthlyAmount(null, 0, 0, 0);</span>
+<span class="nc" id="L261">   }</span>
+
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidIncomeValue() {
+<span class="nc" id="L265">      test.getMonthlyAmount(personId30year2016, -1, 0, 0);</span>
+<span class="nc" id="L266">   }</span>
+
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidStydyRateValue() {
+<span class="nc" id="L270">      test.getMonthlyAmount(personId30year2016, 0, -1, 0);</span>
+<span class="nc" id="L271">   }</span>
+
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidCompletionRatioValue() {
+<span class="nc" id="L275">      test.getMonthlyAmount(personId30year2016, 0, 0, -1);</span>
+<span class="nc" id="L276">   }</span>
+
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidPersonIdLenghtToShort() {
+<span class="nc" id="L280">      test.getMonthlyAmount(&quot;198804245622&quot;, 0, 0, 0);</span>
+<span class="nc" id="L281">   }</span>
+
+   @Test (expected = IllegalArgumentException.class)
+   public void invalidPersonIdLenghtToLong() {
+<span class="nc" id="L285">      test.getMonthlyAmount(&quot;19880424--5622&quot;, 0, 0, 0);</span>
+<span class="nc" id="L286">   }</span>
+
+   /*Payment day tests
+   [ID: 506] Student loans and subsidiary is paid on the last weekday (Monday to Friday) every month.*/
+   
+   @Test
+   public void testPayDayJan2016() {
+<span class="fc" id="L293">      cal = new Calendar2016jan();</span>
+
+      try {
+<span class="fc" id="L296">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L297">      } catch (IOException e) {</span>
+<span class="nc" id="L298">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L299">      }</span>
+<span class="fc" id="L300">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in January 2016&quot;, &quot;20160129&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L301">   }</span>
+   
+   @Test
+   public void testPayDayFeb2016() {
+<span class="fc" id="L305">      cal = new Calendar2016feb();</span>
+
+      try {
+<span class="fc" id="L308">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L309">      } catch (IOException e) {</span>
+<span class="nc" id="L310">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L311">      }</span>
+<span class="fc" id="L312">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in February 2016&quot;, &quot;20160229&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L313">   }</span>
+   
+   @Test
+   public void testPayDayMar2016() {
+<span class="fc" id="L317">      cal = new Calendar2016mar();</span>
+
+      try {
+<span class="fc" id="L320">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L321">      } catch (IOException e) {</span>
+<span class="nc" id="L322">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L323">      }</span>
+<span class="fc" id="L324">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in March 2016&quot;, &quot;20160331&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L325">   }</span>
+   
+   @Test
+   public void testPayDayApr2016() {
+<span class="fc" id="L329">      cal = new Calendar2016apr();</span>
+
+      try {
+<span class="fc" id="L332">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L333">      } catch (IOException e) {</span>
+<span class="nc" id="L334">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L335">      }</span>
+<span class="fc" id="L336">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in April 2016&quot;, &quot;20160429&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L337">   }</span>
+   
+   @Test
+   public void testPayDayMay2016() {
+<span class="fc" id="L341">      cal = new Calendar2016may();</span>
+
+      try {
+<span class="fc" id="L344">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L345">      } catch (IOException e) {</span>
+<span class="nc" id="L346">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L347">      }</span>
+<span class="fc" id="L348">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in May 2016&quot;, &quot;20160531&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L349">   }</span>
+   
+   @Test
+   public void testPayDayJun2016() {
+<span class="fc" id="L353">      cal = new Calendar2016jun();</span>
+
+      try {
+<span class="fc" id="L356">         test = new PaymentImpl(cal, DEFAULT_RULES);</span>
+<span class="nc" id="L357">      } catch (IOException e) {</span>
+<span class="nc" id="L358">         System.out.println(&quot;IOExeption: &quot; + e);</span>
+<span class="fc" id="L359">      }</span>
+<span class="fc" id="L360">      assertEquals(&quot;[ID: 506] Payment day was not the last weekday in June 2016&quot;, &quot;20160630&quot;, test.getNextPaymentDay());</span>
+<span class="fc" id="L361">   }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
